@@ -15,6 +15,21 @@ int MotorDriver::getCurrentPosition(){
     return currentPosition;
 }
 
+int MotorDriver::getTargetPositionRounded(){
+
+    return round(targetPosition/minimumStepSize)*minimumStepSize;
+
+}
+
+bool MotorDriver::isMoving(){
+
+    return abs(currentPosition-getTargetPositionRounded()) >=  minimumStepSize;
+
+}
+
+
+
+
 void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, int calibrationconstant_new, int percent_delay){
 
     digitalWrite(PIN_PHASE, calibrationdirection);
@@ -72,7 +87,7 @@ int MotorDriver::update(){
         digitalWrite(PIN_PHASE, 0);
     }
 
-    if (abs(currentPosition-targetPositionRounded) <  minimumStepSize )
+    if (abs(currentPosition-targetPositionRounded) <  minimumStepSize || currentPosition > angle_max || currentPosition < angle_min )
     {
         direction=0;
         analogWrite(PIN_ENABLE, 0);
@@ -83,8 +98,10 @@ int MotorDriver::update(){
     
 
 
-    
-    if (millis()-timeWhenLastCalibrated >10000){
+    if (millis()-timeWhenLastCalibrated >5000){
+        if (currentPosition>=angle_max) recalibrate(0, 255, calibrationConstant, 5);
+        else if (currentPosition<=angle_min) recalibrate(255, 255, calibrationConstant, 5);    
+    } else if (millis()-timeWhenLastCalibrated >10000){
         if (currentPosition>(2*angle_max-angle_min)/3) recalibrate(0, 255, calibrationConstant, 10);
         else if (currentPosition<(angle_max-angle_min)/3) recalibrate(255, 255, calibrationConstant, 10);        
     } else if (millis()-timeWhenLastCalibrated >60000){
@@ -93,7 +110,7 @@ int MotorDriver::update(){
     } else if (millis()-timeWhenLastCalibrated >120000){
         if (currentPosition>(angle_max-angle_min)/2) recalibrate(0, 255, calibrationConstant, 10);
         else recalibrate(255, 255, calibrationConstant, 10);        
-    } 
+    }
     
 
     return currentPosition;

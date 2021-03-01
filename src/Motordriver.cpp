@@ -49,8 +49,10 @@ void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, in
     if (calibrationdirection==0) currentPosition=angle_min;
     else currentPosition=angle_max;
 
-    if (calibrationconstant_new>0) delay(percent_delay*(1/100)*calibrationconstant_new*(255/speed));
-    else delay(percent_delay*(1/100)*calibrationConstant*(255/speed));
+    if (calibrationconstant_new>0) calibrationConstant = calibrationconstant_new;
+    
+    
+    delay(percent_delay*(1/100)*calibrationConstant*(255/speed));
 
     analogWrite(PIN_ENABLE, 0);
     timeWhenLastCalibrated = millis();

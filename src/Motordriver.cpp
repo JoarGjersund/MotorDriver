@@ -16,7 +16,7 @@ bool MotorDriver::setCalibrationConstant(int newConstant){
     return true;
 }
 
-bool MotorDriver::setMinimumStepSize(int newMinimumStepSize){
+void MotorDriver::setMinimumStepSize(int newMinimumStepSize){
     minimumStepSize=newMinimumStepSize;
     return void;
 }

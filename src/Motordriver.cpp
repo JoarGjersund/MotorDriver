@@ -55,9 +55,10 @@ void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, in
     unsigned int delayTime = round((percent_delay*(1/100.0)*calibrationConstant*(255.0/speed)));
 
     long unsigned int start = millis();
-    while (millis()-start < delayTime){ }
+    while (millis()-start < delayTime){ Serial.print("."); }
     analogWrite(PIN_ENABLE, 0);
     timeWhenLastCalibrated = millis();
+    direction=0;
 }
 
 
@@ -105,18 +106,19 @@ int MotorDriver::update(){
 
     if (abs(currentPosition-targetPositionRounded) <  minimumStepSize || currentPosition > angle_max || currentPosition < angle_min )
     {
+        
         direction=0;
-        analogWrite(PIN_ENABLE, 0);
+        analogWrite(PIN_ENABLE, 0);  
+
     }else{
         analogWrite(PIN_ENABLE, speed);
     }
 
-    
 
 
     if (millis()-timeWhenLastCalibrated >5000){
-        if (currentPosition>=angle_max) recalibrate(0, 255, calibrationConstant, 5);
-        else if (currentPosition<=angle_min) recalibrate(255, 255, calibrationConstant, 5);    
+        if (currentPosition>=angle_max) recalibrate(0, 200, calibrationConstant, 5);
+        else if (currentPosition<=angle_min) recalibrate(255, 200, calibrationConstant, 5);    
     } else if (millis()-timeWhenLastCalibrated >10000){
         if (currentPosition>(2*angle_max-angle_min)/3) recalibrate(0, 255, calibrationConstant, 10);
         else if (currentPosition<(angle_max-angle_min)/3) recalibrate(255, 255, calibrationConstant, 10);        

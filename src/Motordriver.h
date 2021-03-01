@@ -5,7 +5,7 @@
 class MotorDriver {
     public:
     float phase = 0;
-    int amplitude = 0;
+    int amplitude = 90;
     int offset = 90;
     MotorDriver(int PIN_ENABLE, int PIN_PHASE);
     int update();

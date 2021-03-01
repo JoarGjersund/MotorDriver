@@ -11,6 +11,7 @@ class MotorDriver {
     int update();
     void setTargetPosition(int target);
     int getCurrentPosition();
+    bool setCalibrationConstant(int newConstant);
     int getTargetPositionRounded();
     bool isMoving();
     int targetPosition;

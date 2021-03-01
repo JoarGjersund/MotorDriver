@@ -11,6 +11,11 @@ MotorDriver::MotorDriver(int pin_enable, int pin_phase){
 
 
 }
+bool MotorDriver::setCalibrationConstant(int newConstant){
+    calibrationConstant=newConstant;
+    return true;
+}
+
 int MotorDriver::getCurrentPosition(){
     return currentPosition;
 }

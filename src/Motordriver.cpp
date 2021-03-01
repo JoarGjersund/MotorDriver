@@ -52,7 +52,9 @@ void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, in
     if (calibrationconstant_new>0) calibrationConstant = calibrationconstant_new;
     
     int delayTime = round((percent_delay*(1/100)*calibrationConstant*(255/speed)));
-    delay(delayTime);
+
+    long unsigned int start = millis();
+    while (millis()-start < delayTime){ }
     analogWrite(PIN_ENABLE, 0);
     timeWhenLastCalibrated = millis();
 }

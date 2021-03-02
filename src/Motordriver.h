@@ -17,7 +17,7 @@ class MotorDriver {
     bool isMoving();
     int targetPosition;
     int speed = 255;
-    void recalibrate(int direction = 0, int speed = 50, int calibrationconstant_new = 0, int percent_delay = 100);
+    void recalibrate(int direction = 0, int speed = 50, int calibrationconstant_new = 0, float delay_factor = 1.0);
     int angle_max = 180;
     int angle_min = 0;
     
@@ -30,9 +30,11 @@ class MotorDriver {
     int direction = 0;
     int calibrationConstant=130; // slower motor -> Higher number. ms needed to go from 0 to 180 at maximum speed.
     int minimumStepSize=8; // minimum step size in degrees. higher step size increase torque and accuracy. should be defined by how often  m1.update() is called.
-
+    bool init = false;
     bool calibrationInProgress = false;
     unsigned long calibrationDelayTime = 0;
     unsigned long calibrationTimeStart = 0;
+    float acceleration_factor = 0.5; // higher = faster acceleration, probably due to higher voltage or lower gearing.
+    float acceleration = 0.0;
 
 };

@@ -1,10 +1,13 @@
 #include <Motordriver.h>
 
 
-MotorDriver::MotorDriver(int pin_enable, int pin_phase){
+MotorDriver::MotorDriver(int pin_enable, int pin_phase, int min_angle = 0, int max_angle = 180){
 
     PIN_ENABLE=pin_enable;
     PIN_PHASE=pin_phase;
+    angle_max=max_angle;
+    angle_min=min_angle;
+    offset=(angle_max-angle_min)/2+angle_min;
 
     pinMode(PIN_ENABLE, OUTPUT);
     pinMode(PIN_PHASE, OUTPUT);
@@ -43,6 +46,8 @@ bool MotorDriver::isMoving(){
 
 void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, int calibrationconstant_new, int percent_delay){
 
+
+    Serial.println("calibrating...");
     digitalWrite(PIN_PHASE, calibrationdirection);
     analogWrite(PIN_ENABLE, calibrationspeed);
     
@@ -52,18 +57,17 @@ void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, in
 
     if (calibrationconstant_new>0) calibrationConstant = calibrationconstant_new;
     
-    unsigned int delayTime = round((percent_delay*(1/100.0)*calibrationConstant*(255.0/speed)));
+    calibrationDelayTime= round(percent_delay*(1/100.0)*calibrationConstant*(255.0/calibrationspeed));
+    calibrationTimeStart = millis();
+    calibrationInProgress=true;
 
-    long unsigned int start = millis();
-    while (millis()-start < delayTime){ Serial.print("."); }
-    analogWrite(PIN_ENABLE, 0);
-    timeWhenLastCalibrated = millis();
-    direction=0;
 }
 
 
 
 void MotorDriver::setTargetPosition(int target){
+    if (target > angle_max) target=angle_max;
+    if (target < angle_min) target=angle_min;
     targetPosition=target;
 
 }
@@ -77,17 +81,35 @@ void MotorDriver::setTargetPosition(int target){
 int MotorDriver::update(){
 
 
+    if (calibrationInProgress){
+
+        if (millis()-calibrationTimeStart < calibrationDelayTime){
+
+            Serial.println(String(millis()-calibrationTimeStart-calibrationDelayTime)); 
+            
+        }else {
+            calibrationInProgress=false;
+            direction=0;
+            analogWrite(PIN_ENABLE, 0);
+            timeWhenLastCalibrated = millis();
+
+        }
+
+        return currentPosition;
+    }
+
+
     static bool init = false;
     if (!init){
         timeWhenLastUpdated=millis();
         init=true;
     }
 
-    int timeSinceLastUpdated=millis()-timeWhenLastUpdated;
+    unsigned long timeSinceLastUpdated=millis()-timeWhenLastUpdated;
     
 
 
-    int degreesMovedSinceLastUpdate=timeSinceLastUpdated*180/(calibrationConstant);
+    int degreesMovedSinceLastUpdate=timeSinceLastUpdated*180.0/(calibrationConstant);
 
     if (degreesMovedSinceLastUpdate>0) timeWhenLastUpdated=millis();
 
@@ -117,17 +139,26 @@ int MotorDriver::update(){
 
 
     if (millis()-timeWhenLastCalibrated >5000){
-        if (currentPosition>=angle_max) recalibrate(0, 200, calibrationConstant, 5);
-        else if (currentPosition<=angle_min) recalibrate(255, 200, calibrationConstant, 5);    
+
+        Serial.println("should calibrate..."+String(currentPosition));
+        if (currentPosition>=angle_max-minimumStepSize) recalibrate(0, 5, calibrationConstant, 1);
+        else if (currentPosition<=angle_min+minimumStepSize) recalibrate(255, 5, calibrationConstant, 1);    
+
     } else if (millis()-timeWhenLastCalibrated >10000){
-        if (currentPosition>(2*angle_max-angle_min)/3) recalibrate(0, 255, calibrationConstant, 10);
-        else if (currentPosition<(angle_max-angle_min)/3) recalibrate(255, 255, calibrationConstant, 10);        
+
+        if (currentPosition>(2*angle_max-angle_min)/3-minimumStepSize) recalibrate(0, 10, calibrationConstant, 6);
+        else if (currentPosition<(angle_max-angle_min)/3+minimumStepSize) recalibrate(255, 10, calibrationConstant, 6);       
+
     } else if (millis()-timeWhenLastCalibrated >60000){
-        if (currentPosition>(5*angle_max-angle_min)/6) recalibrate(0, 255, calibrationConstant, 10);
-        else if (currentPosition<5*(angle_max-angle_min)/12) recalibrate(255, 255, calibrationConstant, 10);        
+
+        if (currentPosition>(5*angle_max-angle_min-minimumStepSize)/6) recalibrate(0, 20, calibrationConstant, 8);
+        else if (currentPosition<5*(angle_max-angle_min)/12+minimumStepSize) recalibrate(255, 20, calibrationConstant, 8);  
+
     } else if (millis()-timeWhenLastCalibrated >120000){
-        if (currentPosition>(angle_max-angle_min)/2) recalibrate(0, 255, calibrationConstant, 10);
-        else recalibrate(255, 255, calibrationConstant, 10);        
+
+        if (currentPosition>(angle_max-angle_min)/2-minimumStepSize) recalibrate(0, 35, calibrationConstant, 10);
+        else recalibrate(255, 255, calibrationConstant, 10);     
+
     }
     
 

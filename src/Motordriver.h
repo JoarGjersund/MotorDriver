@@ -22,7 +22,7 @@ class MotorDriver {
     int angle_min = 0;
     
     private:
-    int currentPosition = 0;
+    float currentPosition = 0;
     unsigned long timeWhenLastUpdated = 0;
     unsigned long timeWhenLastCalibrated = 0;
     int PIN_ENABLE;
@@ -34,6 +34,8 @@ class MotorDriver {
     bool calibrationInProgress = false;
     unsigned long calibrationDelayTime = 0;
     unsigned long calibrationTimeStart = 0;
+    void calibrateIfNeeded();
+    bool calibrationHappeningNow();
 
     int currentSpeed = 255;
     int previousCalibrationDir=0;

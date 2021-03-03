@@ -78,14 +78,50 @@ void MotorDriver::setTargetPosition(int target){
 
 
 
+void MotorDriver::calibrateIfNeeded(){
 
 
+    if (millis()-timeWhenLastCalibrated >10000){
+        
+        if (currentPosition>=angle_max-minimumStepSize*8 && direction != -1 && previousCalibrationDir != 1) 
+        {
+            recalibrate(255, speed/4, calibrationConstant, 0.1);
+            previousCalibrationDir = 1;
+            return;
+
+        }
+        else if (currentPosition<=angle_min+minimumStepSize*8 && direction != 1 && previousCalibrationDir != -1){
+            recalibrate(0, speed/4, calibrationConstant, 0.1);
+            previousCalibrationDir = -1;
+            return;
+
+        } 
+
+    }else {
+        
+
+        if (currentPosition>=angle_max-minimumStepSize*4 && direction != -1 && previousCalibrationDir != 1) 
+        {
+            recalibrate(255, speed/4, calibrationConstant, 0.05);
+            previousCalibrationDir = 1;
+            return;
+            
+
+        }
+        else if (currentPosition<=angle_min+minimumStepSize*4 && direction != 1 && previousCalibrationDir != -1){
+            recalibrate(0, speed/4, calibrationConstant, 0.05);
+            previousCalibrationDir = -1;
+            return;
+            
+
+        } 
+
+    }
+
+}
 
 
-int MotorDriver::update(){
-
-
-
+bool MotorDriver::calibrationHappeningNow(){
 
 
     if (calibrationInProgress){
@@ -104,25 +140,30 @@ int MotorDriver::update(){
 
         }
 
+        return true;
+    }
+    return false;
+
+}
+
+
+
+int MotorDriver::update(){
+
+
+    if (calibrationHappeningNow()){
         return currentPosition;
     }
-
-
-
-
-
     if (!init){
-        timeWhenLastUpdated=millis();
+        timeWhenLastUpdated=micros();
         init=true;
     }
 
-    unsigned long timeSinceLastUpdated=millis()-timeWhenLastUpdated;
+    unsigned long timeSinceLastUpdated=micros()-timeWhenLastUpdated;
     
+    float degreesMovedSinceLastUpdate=timeSinceLastUpdated*180.0/(calibrationConstant*1000.0)*currentSpeed/speed;
 
-
-    int degreesMovedSinceLastUpdate=timeSinceLastUpdated*180.0/(calibrationConstant);
-
-    if (degreesMovedSinceLastUpdate>0) timeWhenLastUpdated=millis();
+    if (degreesMovedSinceLastUpdate>0) timeWhenLastUpdated=micros();
 
     currentPosition+=degreesMovedSinceLastUpdate*direction;
 
@@ -146,8 +187,8 @@ int MotorDriver::update(){
         analogWrite(PIN_ENABLE, 0);  
 
     }else{
-        if ( ( currentPosition > angle_max-minimumStepSize && direction == 1 ) || (currentPosition < angle_min+minimumStepSize && direction == -1 ) ){
-            currentSpeed=speed/4;
+        if ( abs(currentPosition-targetPositionRounded) < minimumStepSize*2 || ( currentPosition > angle_max-minimumStepSize*4 && direction == 1 ) || (currentPosition < angle_min+minimumStepSize*4 && direction == -1 ) ){
+            currentSpeed=speed/6;
 
         }else {
             currentSpeed=speed;
@@ -156,41 +197,9 @@ int MotorDriver::update(){
         analogWrite(PIN_ENABLE, currentSpeed);
     }
 
-    Serial.println(String(currentSpeed));
-    if (millis()-timeWhenLastCalibrated >5000){
+    calibrateIfNeeded();
 
-        
-        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1 && previousCalibrationDir != 1) 
-        {
-            recalibrate(255, 50, calibrationConstant, 0.1);
-            previousCalibrationDir = 1;
-            return currentPosition;
 
-        }
-        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1 && previousCalibrationDir != -1){
-            recalibrate(0, 50, calibrationConstant, 0.1);
-            previousCalibrationDir = -1;
-            return currentPosition;
-
-        } 
-
-    }else {
-
-        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1 && previousCalibrationDir != 1) 
-        {
-            recalibrate(255, 50, calibrationConstant, 0.05);
-            return currentPosition;
-            previousCalibrationDir = 1;
-
-        }
-        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1 && previousCalibrationDir != -1){
-            recalibrate(0, 50, calibrationConstant, 0.05);
-            return currentPosition;
-            previousCalibrationDir = -1;
-
-        } 
-
-    }
 
     return currentPosition;
 

@@ -34,7 +34,8 @@ class MotorDriver {
     bool calibrationInProgress = false;
     unsigned long calibrationDelayTime = 0;
     unsigned long calibrationTimeStart = 0;
-    float acceleration_factor = 0.5; // higher = faster acceleration, probably due to higher voltage or lower gearing.
-    float acceleration = 0.0;
+
+    int currentSpeed = 255;
+    int previousCalibrationDir=0;
 
 };

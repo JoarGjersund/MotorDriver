@@ -124,19 +124,16 @@ int MotorDriver::update(){
 
     if (degreesMovedSinceLastUpdate>0) timeWhenLastUpdated=millis();
 
-    currentPosition+=degreesMovedSinceLastUpdate*direction*acceleration;
+    currentPosition+=degreesMovedSinceLastUpdate*direction;
 
     int targetPositionRounded=round(targetPosition/minimumStepSize)*minimumStepSize;
 
         // decide direction to move.
     if ( targetPositionRounded > currentPosition && currentPosition < angle_max){
-        if (direction !=1) acceleration=0;
-        else if (acceleration < 1)acceleration+=acceleration_factor;
+
         direction=1;
         digitalWrite(PIN_PHASE, 255); 
     } else if ( targetPositionRounded < currentPosition && currentPosition > angle_min){
-        if (direction !=-1) acceleration=0;
-        else if (acceleration < 1)acceleration+=acceleration_factor;
 
         direction=-1;
         digitalWrite(PIN_PHASE, 0);
@@ -149,42 +146,47 @@ int MotorDriver::update(){
         analogWrite(PIN_ENABLE, 0);  
 
     }else{
-        if (currentPosition > angle_max-degreesMovedSinceLastUpdate*2 || currentPosition < angle_min+degreesMovedSinceLastUpdate*2 ){
-            analogWrite(PIN_ENABLE, speed/2); // in case we go to far we do not want to break the motor.
+        if ( ( currentPosition > angle_max-minimumStepSize && direction == 1 ) || (currentPosition < angle_min+minimumStepSize && direction == -1 ) ){
+            currentSpeed=speed/4;
+
         }else {
-            analogWrite(PIN_ENABLE, speed);
+            currentSpeed=speed;
+            
         }
-        
+        analogWrite(PIN_ENABLE, currentSpeed);
     }
 
-
+    Serial.println(String(currentSpeed));
     if (millis()-timeWhenLastCalibrated >5000){
 
         
-        Serial.println("should calibrate...");
-        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1) 
+        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1 && previousCalibrationDir != 1) 
         {
             recalibrate(255, 50, calibrationConstant, 0.1);
+            previousCalibrationDir = 1;
             return currentPosition;
 
         }
-        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1){
+        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1 && previousCalibrationDir != -1){
             recalibrate(0, 50, calibrationConstant, 0.1);
+            previousCalibrationDir = -1;
             return currentPosition;
 
         } 
 
     }else {
 
-        if (currentPosition>=angle_max-minimumStepSize && direction != -1) 
+        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1 && previousCalibrationDir != 1) 
         {
             recalibrate(255, 50, calibrationConstant, 0.05);
             return currentPosition;
+            previousCalibrationDir = 1;
 
         }
-        else if (currentPosition<=angle_min+minimumStepSize && direction != 1){
+        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1 && previousCalibrationDir != -1){
             recalibrate(0, 50, calibrationConstant, 0.05);
             return currentPosition;
+            previousCalibrationDir = -1;
 
         } 
 

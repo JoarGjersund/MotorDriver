@@ -9,6 +9,9 @@ MotorDriver::MotorDriver(int pin_enable, int pin_phase, int min_angle = 0, int m
     angle_min=min_angle;
     offset=(angle_max-angle_min)/2+angle_min;
 
+    amplitude=(angle_max-angle_min)/2;
+
+
     pinMode(PIN_ENABLE, OUTPUT);
     pinMode(PIN_PHASE, OUTPUT);
 
@@ -61,6 +64,7 @@ void MotorDriver::recalibrate(int calibrationdirection, int calibrationspeed, in
     calibrationDelayTime= round(delay_factor*calibrationConstant*(255.0/calibrationspeed))*1000;
     calibrationTimeStart = micros();
     calibrationInProgress=true;
+    
 
 }
 
@@ -81,36 +85,42 @@ void MotorDriver::setTargetPosition(int target){
 void MotorDriver::calibrateIfNeeded(){
 
 
-    if (millis()-timeWhenLastCalibrated >10000){
+    if (millis()-timeWhenLastCalibrated >5000){
+
+        if (millis()-counter_calibration1 > 1000){
+            counter_calibration2++;
+            if (counter_calibration2>angle_max) counter_calibration2 = 1;
+            counter_calibration1 = millis();
+        }
         
-        if (currentPosition>=angle_max-minimumStepSize*8 && direction != -1 && previousCalibrationDir != 1) 
+
+        
+        if (currentPosition>=angle_max-counter_calibration2 && direction != -1) 
         {
-            recalibrate(255, speed/4, calibrationConstant, 0.1);
-            previousCalibrationDir = 1;
+            float timeToReach = 2*abs(angle_max-currentPosition)/angle_max;
+            recalibrate(255, speed/6, calibrationConstant, timeToReach);
             return;
 
         }
-        else if (currentPosition<=angle_min+minimumStepSize*8 && direction != 1 && previousCalibrationDir != -1){
-            recalibrate(0, speed/4, calibrationConstant, 0.1);
-            previousCalibrationDir = -1;
+        else if (currentPosition<=angle_min+counter_calibration2 && direction != 1){
+            float timeToReach = 2*abs(angle_min-currentPosition)/angle_max;
+            recalibrate(0, speed/6, calibrationConstant, timeToReach);
             return;
 
         } 
 
-    }else {
+    } else if (millis()-timeWhenLastCalibrated >2000){
         
 
-        if (currentPosition>=angle_max-minimumStepSize*4 && direction != -1 && previousCalibrationDir != 1) 
+        if (currentPosition>=angle_max-minimumStepSize*2 && direction != -1) 
         {
-            recalibrate(255, speed/4, calibrationConstant, 0.05);
-            previousCalibrationDir = 1;
+            recalibrate(255, speed/6, calibrationConstant, 0.05);
             return;
             
 
         }
-        else if (currentPosition<=angle_min+minimumStepSize*4 && direction != 1 && previousCalibrationDir != -1){
-            recalibrate(0, speed/4, calibrationConstant, 0.05);
-            previousCalibrationDir = -1;
+        else if (currentPosition<=angle_min+minimumStepSize*2 && direction != 1){
+            recalibrate(0, speed/6, calibrationConstant, 0.05);
             return;
             
 
@@ -136,6 +146,7 @@ bool MotorDriver::calibrationHappeningNow(){
             direction=0;
             analogWrite(PIN_ENABLE, 0);
             timeWhenLastCalibrated = millis();
+            counter_calibration2 = 1; // reset offset from calibration threshold angle 
             init=false;
 
         }
@@ -161,7 +172,7 @@ int MotorDriver::update(){
 
     unsigned long timeSinceLastUpdated=micros()-timeWhenLastUpdated;
     
-    float degreesMovedSinceLastUpdate=timeSinceLastUpdated*180.0/(calibrationConstant*1000.0)*currentSpeed/speed;
+    float degreesMovedSinceLastUpdate=timeSinceLastUpdated*180.0/(calibrationConstant*1000.0);
 
     if (degreesMovedSinceLastUpdate>0) timeWhenLastUpdated=micros();
 
@@ -182,18 +193,22 @@ int MotorDriver::update(){
 
     if (abs(currentPosition-targetPositionRounded) <  minimumStepSize || currentPosition > angle_max || currentPosition < angle_min )
     {
-        
+        currentSpeed=0;
         direction=0;
-        analogWrite(PIN_ENABLE, 0);  
+
+        analogWrite(PIN_ENABLE, currentSpeed);  
 
     }else{
-        if ( abs(currentPosition-targetPositionRounded) < minimumStepSize*2 || ( currentPosition > angle_max-minimumStepSize*4 && direction == 1 ) || (currentPosition < angle_min+minimumStepSize*4 && direction == -1 ) ){
-            currentSpeed=speed/6;
 
-        }else {
-            currentSpeed=speed;
+        if ( (currentPosition > angle_max-minimumStepSize && direction==1 ) || (currentPosition < angle_min+minimumStepSize && direction==-1) )
+        {
             
+             currentSpeed=speed/(minimumStepSize);
         }
+        else{
+            currentSpeed = speed;
+        }
+
         analogWrite(PIN_ENABLE, currentSpeed);
     }
 

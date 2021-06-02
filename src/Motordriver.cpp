@@ -27,13 +27,7 @@ void MotorDriver::setFrequency(float frequency) {
 
 void MotorDriver::setAmplitude(float amplitude) {
 
-    double ratio = _angle / amplitude;
-    if (abs(ratio) > 1)
-        _amplitude=_angle;
-    else
-        _amplitude=amplitude;
-    
-    setOffset(); // to change amplitude smothly we need to shift phase so both angles match up.
+    newAmplitude=amplitude;
 }
 
 void MotorDriver::stop(unsigned int delaytime_ms) {
@@ -55,6 +49,11 @@ bool MotorDriver::update(int encoder_position) {
         return false;
     }
     _angle_prev=_angle;
+    // if we want to  change amplitude we do it when angle is 0 to avoid having to deal with phase change.
+    if (newAmplitude!=0 && round(_angle) == 0){
+        _amplitude=newAmplitude;
+        newAmplitude=0;
+    }
     _angle = _amplitude*sin(_frequency*millis()/1000+_phase_offset); // asin(ft+ph)
 
     bool motor_move = true;

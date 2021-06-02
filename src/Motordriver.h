@@ -32,6 +32,7 @@ class MotorDriver {
     double _phase_offset = 0.0;
     double setOffset();
     bool isClimbing=false;
+    float newAmplitude=0;
     
 
 };

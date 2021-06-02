@@ -27,7 +27,7 @@ void MotorDriver::setFrequency(float frequency) {
 }
 
 void MotorDriver::setAmplitude(float amplitude) {
-    if (amplitude==newAmplitude || amplitude=_amplitude) return;
+    if (amplitude==newAmplitude || amplitude==_amplitude) return;
     newAmplitude=amplitude;
 }
 

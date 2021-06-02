@@ -4,12 +4,12 @@
 #endif
 class MotorDriver {
     public:
-    MotorDriver(int pin_enable, int pin_phase); // gearfactor: encoder_position = output_angle*gearfactor 
+    MotorDriver(int pin_enable, int pin_phase); 
     
-    double gearfactor = 430.0f / 360.0f;
+    double gearfactor = 5; //430.0f / 360.0f;// gearfactor: encoder_position = output_angle*gearfactor 
     void setFrequency(float frequency); // Frequency in revolutions per second.
     void setAmplitude(float amplitude); // current motor angle must be smaller than new amplitude
-    void stop(unsigned int delaytime_ms=0); // 
+    void stop(unsigned long delaytime_ms=0); // 
     void pause(bool doPause);
     bool update(int encoder_position); // returns true if motor is moving.
     bool isAtPeakTop(); // for debounce purpose: calling this will clear flag until after peak bottom is reached
@@ -30,7 +30,6 @@ class MotorDriver {
     bool isStalling = false;
     int encoder_position_prev = 0;
     double _phase_offset = 0.0;
-    double setOffset();
     bool isClimbing=false;
     float newAmplitude=0;
     

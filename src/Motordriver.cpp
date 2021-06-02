@@ -17,9 +17,9 @@ void MotorDriver::init() {
     
 }
 void MotorDriver::setFrequency(float frequency) {
-    if (frequency == _frequency) return;
+    if (2*M_PI*frequency == _frequency) return;
     frequency*=2*M_PI;
-    double newOffset=(_frequency-frequency)*millis()/1000+_phase_offset; // to make a smooth transition to new frequency we need to shift phase.
+    double newOffset=(_frequency-frequency)*millis()/1000.0+_phase_offset; // to make a smooth transition to new frequency we need to shift phase.
     _phase_offset=newOffset;
 
     _frequency=frequency;
@@ -31,8 +31,10 @@ void MotorDriver::setAmplitude(float amplitude) {
     newAmplitude=amplitude;
 }
 
-void MotorDriver::stop(unsigned int delaytime_ms) {
+void MotorDriver::stop(unsigned long delaytime_ms) {
+    if (millis() <= _stop_t0) return;
     _stop_t0=millis()+delaytime_ms;
+    _phase_offset-=_frequency*delaytime_ms/1000.0;
 
 }
 void MotorDriver::pause(bool doPause) {
@@ -40,22 +42,21 @@ void MotorDriver::pause(bool doPause) {
 
 }
 
-double MotorDriver::setOffset() {
-    _phase_offset = asin(_angle/_amplitude) - _frequency * millis() / 1000; 
-}
+
 
 bool MotorDriver::update(int encoder_position) {
-    if (millis() < _stop_t0 || _pause){
-        setOffset();
+    if (millis() < _stop_t0 || _pause) {
+        analogWrite(pin_en, 0);
         return false;
     }
+
     _angle_prev=_angle;
     // if we want to  change amplitude we do it when angle is 0 to avoid having to deal with phase change.
     if (newAmplitude!=0 && round(_angle) == 0){
         _amplitude=newAmplitude;
         newAmplitude=0;
     }
-    _angle = _amplitude*sin(_frequency*millis()/1000+_phase_offset); // asin(ft+ph)
+    _angle = _amplitude*sin(_frequency*millis()/1000.0+_phase_offset); // asin(ft+ph)
 
     bool motor_move = true;
     int16_t offset =  gearfactor*_angle - encoder_position;

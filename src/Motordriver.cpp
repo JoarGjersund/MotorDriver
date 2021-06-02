@@ -6,12 +6,18 @@ MotorDriver::MotorDriver( int pin_enable, int pin_phase){
     pin_en=pin_enable;
     pin_ph=pin_phase;
 
-    pinMode(pin_en, OUTPUT);
-    pinMode(pin_ph, OUTPUT);
+
 
 
 }
+void MotorDriver::init() {
+
+    pinMode(pin_en, OUTPUT);
+    pinMode(pin_ph, OUTPUT);
+    
+}
 void MotorDriver::setFrequency(float frequency) {
+    frequency*=2*M_PI;
     double newOffset=(_frequency-frequency)*millis()/1000+_phase_offset; // to make a smooth transition to new frequency we need to shift phase.
     _phase_offset=newOffset;
 

@@ -1,13 +1,13 @@
 #include <Motordriver.h>
 
 
-MotorDriver::MotorDriver(double gearfactor, int pin_enable, int pin_phase){
+MotorDriver::MotorDriver( int pin_enable, int pin_phase){
 
-    PIN_ENABLE=pin_enable;
-    PIN_PHASE=pin_phase;
+    pin_en=pin_enable;
+    pin_ph=pin_phase;
 
-    pinMode(PIN_ENABLE, OUTPUT);
-    pinMode(PIN_PHASE, OUTPUT);
+    pinMode(pin_en, OUTPUT);
+    pinMode(pin_ph, OUTPUT);
 
 
 }
@@ -30,7 +30,7 @@ void MotorDriver::setAmplitude(float amplitude) {
     setOffset(); // to change amplitude smothly we need to shift phase so both angles match up.
 }
 
-void MotorDriver::stop(unsgined int delaytime_ms) {
+void MotorDriver::stop(unsigned int delaytime_ms) {
     _stop_t0=millis()+delaytime_ms;
 
 }
@@ -80,8 +80,8 @@ bool MotorDriver::update(int encoder_position) {
     }
 
     // output direction and voltage to motor
-    digitalWrite(A_PH, (output_voltage > 0));
-    analogWrite(A_EN, abs(output_voltage));
+    digitalWrite(pin_ph, (output_voltage > 0));
+    analogWrite(pin_en, abs(output_voltage));
 
     // return true if motor has moved since last update
     if (encoder_position == encoder_position_prev) motor_move=false;

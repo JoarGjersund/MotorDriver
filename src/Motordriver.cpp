@@ -54,6 +54,7 @@ bool MotorDriver::update(int encoder_position) {
         setOffset();
         return false;
     }
+    _angle_prev=_angle;
     _angle = _amplitude*sin(_frequency*millis()/1000+_phase_offset); // asin(ft+ph)
 
     bool motor_move = true;
@@ -101,11 +102,21 @@ bool MotorDriver::update(int encoder_position) {
 }
 
 bool MotorDriver::isAtPeakTop() {
-
-
+    if (isClimbing && _angle-_angle_prev < 0)
+    {
+        isClimbing=false;
+        return true;
+    }
+    return false;
 }
 
 bool MotorDriver::isAtPeakBottom() {
+
+    if (!isClimbing && _angle-_angle_prev > 0) {
+        isClimbing=true;
+        return true;
+    }
+    return false;
 
 }
 

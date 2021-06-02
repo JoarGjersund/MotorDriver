@@ -31,6 +31,7 @@ class MotorDriver {
     int encoder_position_prev = 0;
     double _phase_offset = 0.0;
     double setOffset();
+    bool isClimbing=false;
     
 
 };

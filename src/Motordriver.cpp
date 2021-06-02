@@ -17,6 +17,7 @@ void MotorDriver::init() {
     
 }
 void MotorDriver::setFrequency(float frequency) {
+    if (frequency == _frequency) return;
     frequency*=2*M_PI;
     double newOffset=(_frequency-frequency)*millis()/1000+_phase_offset; // to make a smooth transition to new frequency we need to shift phase.
     _phase_offset=newOffset;
@@ -26,7 +27,7 @@ void MotorDriver::setFrequency(float frequency) {
 }
 
 void MotorDriver::setAmplitude(float amplitude) {
-
+    if (amplitude==newAmplitude || amplitude=_amplitude) return;
     newAmplitude=amplitude;
 }
 

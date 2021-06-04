@@ -46,9 +46,14 @@ void MotorDriver::pause(bool doPause) {
 }
 
 void MotorDriver::goTo(bool enable, float targetAngle, float acceleration) {
+    if (!enable) {
+        if (abs(_angle) > _amplitude) _amplitude=_angle;
+        _phase_offset=asin(_angle/_amplitude)-_frequency*millis()/(_amplitude*1000.0); // needed for smooth transition to sin wave.
+    }
     goAndStop=enable;
     goAndStop_targetAngle=targetAngle;
     goAndStop_acceleration=acceleration;
+    isStalling=false;
 
 }
 
@@ -65,11 +70,18 @@ bool MotorDriver::update(volatile int encoder_position) {
         return false;
     }
     if (goAndStop) {
+
         
-        if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 2){
+        if (isStalling && millis()-_stall_t0 > stall_cutoff_ms){
+            analogWrite(pin_en, 0);
+            return false;
+
+        } 
+        else if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 2){
             analogWrite(pin_en, 0);
             motor_move=false;
             goAndStop_speed=0;
+            _angle=goAndStop_targetAngle;
 
         } else if (goAndStop_targetAngle*gearfactor > encoder_position){
             goAndStop_speed+=goAndStop_acceleration;
@@ -86,6 +98,17 @@ bool MotorDriver::update(volatile int encoder_position) {
             motor_move=true;
 
         }
+        if (!isStalling && encoder_position == encoder_position_prev && goAndStop_speed!=0)
+        {
+            isStalling=true;
+            _stall_t0=millis();
+
+        }
+        else if (encoder_position != encoder_position_prev) {
+            isStalling=false;
+        }
+        encoder_position_prev = encoder_position;
+
         return motor_move;
     }
 

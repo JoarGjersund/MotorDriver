@@ -16,7 +16,7 @@ class MotorDriver {
     bool update(volatile int encoder_position); // returns true if motor is moving.
     bool isAtPeakTop(); // for debounce purpose: calling this will clear flag until after peak bottom is reached
     bool isAtPeakBottom(); // for debounce purpose: calling this will clear flag until after peak top is reached
-    void goTo(bool enable, float targetAngle, float acceleration); // set desired position and go.
+    void goTo(bool enable, float targetAngle=0, float acceleration=100); // set desired position and go.
     void sync(double input_angle); // parrot another motor. Must be called before each update().
     bool motor_move = false;
     double _angle = 0;

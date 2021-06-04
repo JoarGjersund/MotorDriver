@@ -12,23 +12,21 @@ class MotorDriver {
     void setPhaseOffset(float offset); // set offset in radians. will be added to current offset.
     void stop(unsigned long delaytime_ms=0); // 
     void pause(bool doPause);
-    bool update(int encoder_position); // returns true if motor is moving.
+    bool update(volatile int encoder_position); // returns true if motor is moving.
     bool isAtPeakTop(); // for debounce purpose: calling this will clear flag until after peak bottom is reached
     bool isAtPeakBottom(); // for debounce purpose: calling this will clear flag until after peak top is reached
-    void init();
     void goTo(bool enable, float targetAngle, float acceleration); // set desired position and go.
     private:
     int pin_en;
     int pin_ph;
-    float _frequency = 6*M_PI;
+    float _frequency = 12*M_PI;
     float _amplitude = 10;
     unsigned long _stop_t0 = 0;
     unsigned long _stall_t0 = 0;
     bool _pause = false;
-    float _angle = 0;
-    float _angle_prev = 0;
+    double _angle = 0;
+    double _angle_prev = 0;
     float _angle_stallStart = 0;
-    
     int16_t torque = 250;
     unsigned int stall_cutoff_ms = 50;
     bool isStalling = false;
@@ -37,11 +35,11 @@ class MotorDriver {
     bool isClimbing=false;
     float newAmplitude=0.0f;
     float newFrequency=0.0f;
+    float newOffset=0.0f;
     bool goAndStop=false;
     float goAndStop_targetAngle=0;
     double goAndStop_acceleration=0.1;
     double goAndStop_speed=0.0;
-    int goAndStop_directionUp=0; // -1 down, +1 up, 0 nowhere.
-    
+    int goAndStop_directionUp=0; // -1 down, +1 up, 0 nowhere.    
 
 };

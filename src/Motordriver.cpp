@@ -5,20 +5,16 @@ MotorDriver::MotorDriver( int pin_enable, int pin_phase){
 
     pin_en=pin_enable;
     pin_ph=pin_phase;
-
-
-
-
-}
-void MotorDriver::init() {
-
     pinMode(pin_en, OUTPUT);
     pinMode(pin_ph, OUTPUT);
-    
+
+
+
 }
+
 void MotorDriver::setFrequency(float frequency) {
-    if (2*M_PI*frequency == _frequency) return;
-    newFrequency=frequency*2*M_PI;
+    if (2.0f*M_PI*frequency == _frequency) return;
+    newFrequency=2.0f*M_PI*frequency;
 
 }
 
@@ -28,7 +24,8 @@ void MotorDriver::setAmplitude(float amplitude) {
 }
 
 void MotorDriver::setPhaseOffset(float offset) {
-    _phase_offset+=offset;
+    if (newOffset!=0) return;
+    newOffset=offset;
 }
 
 void MotorDriver::stop(unsigned long delaytime_ms) {
@@ -51,7 +48,7 @@ void MotorDriver::goTo(bool enable, float targetAngle, float acceleration) {
 
 
 
-bool MotorDriver::update(int encoder_position) {
+bool MotorDriver::update(volatile int encoder_position) {
     if (millis() < _stop_t0 || _pause) {
         analogWrite(pin_en, 0);
         return false;
@@ -99,8 +96,14 @@ bool MotorDriver::update(int encoder_position) {
         newFrequency=0;
         _phase_offset=-M_PI/2.0-_frequency*millis()/(_amplitude*1000.0);
     }
+    // if new offset. set offset.
+    if (newOffset!=0) {
+        _phase_offset+=newOffset;
+        newOffset=0;
+    }
     _angle_prev=_angle;
     _angle = _amplitude*sin(_frequency*millis()/(_amplitude*1000.0)+_phase_offset); // asin(ft+ph)
+    
 
     bool motor_move = true;
     int16_t offset =  gearfactor*_angle - encoder_position;
@@ -147,20 +150,24 @@ bool MotorDriver::update(int encoder_position) {
 }
 
 bool MotorDriver::isAtPeakTop() {
-    if (isClimbing && floor(_angle*10)/10-floor(_angle_prev*10)/10 < 0)
+    if (isClimbing && _angle-_angle_prev < 0 )
     {
-        isClimbing=false;
         return true;
     }
+    if (_angle-_angle_prev < 0) isClimbing=false;
+    else isClimbing=true;
+
     return false;
 }
 
 bool MotorDriver::isAtPeakBottom() {
 
-    if (!isClimbing && floor(_angle*10)/10-floor(_angle_prev*10)/10 > 0) {
-        isClimbing=true;
+    if (!isClimbing && _angle-_angle_prev > 0 ){
         return true;
     }
+    if (_angle-_angle_prev < 0) isClimbing=false;
+    else isClimbing=true;
+
     return false;
 
 }

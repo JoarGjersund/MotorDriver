@@ -28,6 +28,8 @@ void MotorDriver::setPhaseOffset(float offset) {
     newOffset=offset;
 }
 
+
+
 void MotorDriver::stop(unsigned long delaytime_ms) {
     if (millis() <= _stop_t0) return;
     _stop_t0=millis()+delaytime_ms;
@@ -44,6 +46,11 @@ void MotorDriver::goTo(bool enable, float targetAngle, float acceleration) {
     goAndStop_targetAngle=targetAngle;
     goAndStop_acceleration=acceleration;
 
+}
+
+void MotorDriver::sync(double input_angle) {
+    parrot=true;
+    _angle=input_angle;
 }
 
 
@@ -78,7 +85,7 @@ bool MotorDriver::update(volatile int encoder_position) {
     
     // if we want to  change amplitude we do it when angle is 0 to avoid having to deal with phase change.
     if (newAmplitude!=0 && floor(_angle*10)/10 == 0){
-        _phase_offset+=_frequency*(millis()/1000.0)*(1/_amplitude - 1/newAmplitude);
+        _phase_offset+=_frequency*(millis()/1000.0)*(1.0/_amplitude - 1.0/newAmplitude);
         _amplitude=newAmplitude;
         newAmplitude=0;
         
@@ -101,9 +108,11 @@ bool MotorDriver::update(volatile int encoder_position) {
         _phase_offset+=newOffset;
         newOffset=0;
     }
+
     _angle_prev=_angle;
-    _angle = _amplitude*sin(_frequency*millis()/(_amplitude*1000.0)+_phase_offset); // asin(ft+ph)
-    
+    if (!parrot)
+        _angle = _amplitude*sin(_frequency*millis()/(_amplitude*1000.0)+_phase_offset); // asin(ft+ph)
+    else parrot=false;
 
     bool motor_move = true;
     int16_t offset =  gearfactor*_angle - encoder_position;

@@ -16,6 +16,9 @@ class MotorDriver {
     bool isAtPeakTop(); // for debounce purpose: calling this will clear flag until after peak bottom is reached
     bool isAtPeakBottom(); // for debounce purpose: calling this will clear flag until after peak top is reached
     void goTo(bool enable, float targetAngle, float acceleration); // set desired position and go.
+    void sync(double input_angle); // parrot another motor. Must be called before each update().
+    double _angle = 0;
+
     private:
     int pin_en;
     int pin_ph;
@@ -24,7 +27,6 @@ class MotorDriver {
     unsigned long _stop_t0 = 0;
     unsigned long _stall_t0 = 0;
     bool _pause = false;
-    double _angle = 0;
     double _angle_prev = 0;
     float _angle_stallStart = 0;
     int16_t torque = 250;
@@ -41,5 +43,7 @@ class MotorDriver {
     double goAndStop_acceleration=0.1;
     double goAndStop_speed=0.0;
     int goAndStop_directionUp=0; // -1 down, +1 up, 0 nowhere.    
+    bool parrot=false;
+    double* parrot_angle;
 
 };

@@ -28,6 +28,10 @@ void MotorDriver::setPhaseOffset(float offset) {
     newOffset=offset;
 }
 
+void MotorDriver::setMidline(int midline) {
+    _midline=midline;
+}
+
 
 
 void MotorDriver::stop(unsigned long delaytime_ms) {
@@ -64,6 +68,7 @@ bool MotorDriver::update(volatile int encoder_position) {
         
         if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 2){
             analogWrite(pin_en, 0);
+            motor_move=false;
             goAndStop_speed=0;
 
         } else if (goAndStop_targetAngle*gearfactor > encoder_position){
@@ -71,18 +76,20 @@ bool MotorDriver::update(volatile int encoder_position) {
             if (goAndStop_speed>torque) goAndStop_speed=torque;
             analogWrite(pin_en, goAndStop_speed);
             digitalWrite(pin_ph, HIGH);
+            motor_move=true;
 
         } else if (goAndStop_targetAngle*gearfactor < encoder_position){
             goAndStop_speed+=goAndStop_acceleration;
             if (goAndStop_speed>torque) goAndStop_speed=torque;
             analogWrite(pin_en, goAndStop_speed);
             digitalWrite(pin_ph, LOW);
+            motor_move=true;
 
         }
-        return true;
+        return motor_move;
     }
 
-    
+ 
     // if we want to  change amplitude we do it when angle is 0 to avoid having to deal with phase change.
     if (newAmplitude!=0 && floor(_angle*10)/10 == 0){
         _phase_offset+=_frequency*(millis()/1000.0)*(1.0/_amplitude - 1.0/newAmplitude);
@@ -111,10 +118,10 @@ bool MotorDriver::update(volatile int encoder_position) {
 
     _angle_prev=_angle;
     if (!parrot)
-        _angle = _amplitude*sin(_frequency*millis()/(_amplitude*1000.0)+_phase_offset); // asin(ft+ph)
+        _angle = _amplitude*sin(_frequency*millis()/(_amplitude*1000.0)+_phase_offset)+_midline; // asin(ft+ph)
     else parrot=false;
 
-    bool motor_move = true;
+    motor_move = true;
     int16_t offset =  gearfactor*_angle - encoder_position;
     int16_t output_voltage = 0;
 

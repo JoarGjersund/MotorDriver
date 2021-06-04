@@ -150,23 +150,23 @@ bool MotorDriver::update(volatile int encoder_position) {
 }
 
 bool MotorDriver::isAtPeakTop() {
-    if (isClimbing && _angle-_angle_prev < 0 )
+    if (isClimbing && _angle-_angle_prev < 0 && !(millis() < _stop_t0+10 || _pause) )
     {
+        isClimbing=false;
         return true;
     }
-    if (_angle-_angle_prev < 0) isClimbing=false;
-    else isClimbing=true;
+    if (_angle-_angle_prev > 0) isClimbing=true;
 
     return false;
 }
 
 bool MotorDriver::isAtPeakBottom() {
 
-    if (!isClimbing && _angle-_angle_prev > 0 ){
+    if (!isClimbing && _angle-_angle_prev > 0 && !(millis() < _stop_t0+10 || _pause) ){
+        isClimbing=true;
         return true;
     }
     if (_angle-_angle_prev < 0) isClimbing=false;
-    else isClimbing=true;
 
     return false;
 

@@ -114,7 +114,7 @@ bool MotorDriver::update(volatile int encoder_position) {
 
  
     // if we want to  change amplitude we do it when angle is 0 to avoid having to deal with phase change.
-    if (newAmplitude!=0 && floor(_angle*10)/10 == 0){
+    if (newAmplitude!=0 && floor(_angle*10)/10 == _midline){
         _phase_offset+=_frequency*(millis()/1000.0)*(1.0/_amplitude - 1.0/newAmplitude);
         _amplitude=newAmplitude;
         newAmplitude=0;
@@ -122,13 +122,13 @@ bool MotorDriver::update(volatile int encoder_position) {
         
     }
     // we change frequency when want to do it at the paks. once angle is decreasing and we are at positive side of the axis we have just passed the top.
-    if (floor(_angle*10)/10 == _amplitude && newFrequency!=0) {
+    if (floor(_angle*10)/10 == _amplitude+_midline && newFrequency!=0) {
         _frequency=newFrequency;
         newFrequency=0;
         _phase_offset=M_PI/2.0-_frequency*millis()/(_amplitude*1000.0);
     }
     // once angle is increasing and we are at negative side of the axis we have just passed the bottom.
-    if (floor(_angle*10)/10 == -_amplitude && newFrequency!=0) {
+    if (floor(_angle*10)/10 == -_amplitude+_midline && newFrequency!=0) {
         _frequency=newFrequency;
         newFrequency=0;
         _phase_offset=-M_PI/2.0-_frequency*millis()/(_amplitude*1000.0);
@@ -194,6 +194,7 @@ bool MotorDriver::isAtPeakTop() {
         isClimbing=false;
         return true;
     }
+    //if (_angle-_angle_prev > 0) isClimbing=true;
 
     return false;
 }
@@ -204,6 +205,7 @@ bool MotorDriver::isAtPeakBottom() {
         isClimbing=true;
         return true;
     }
+    //if (_angle-_angle_prev < 0) isClimbing=false;
 
     return false;
 

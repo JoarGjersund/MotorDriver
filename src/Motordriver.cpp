@@ -194,7 +194,6 @@ bool MotorDriver::isAtPeakTop() {
         isClimbing=false;
         return true;
     }
-    if (_angle-_angle_prev > 0) isClimbing=true;
 
     return false;
 }
@@ -205,7 +204,6 @@ bool MotorDriver::isAtPeakBottom() {
         isClimbing=true;
         return true;
     }
-    if (_angle-_angle_prev < 0) isClimbing=false;
 
     return false;
 

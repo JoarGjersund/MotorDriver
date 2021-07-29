@@ -1,5 +1,5 @@
 #include <Motordriver.h>
-
+#define USE_ININ
 
 MotorDriver::MotorDriver( int pin_enable, int pin_phase){
 
@@ -66,19 +66,34 @@ void MotorDriver::sync(double input_angle) {
 
 bool MotorDriver::update(volatile int encoder_position) {
     if (millis() < _stop_t0 || _pause) {
+        #ifdef USE_ININ
         analogWrite(pin_en, 0);
+        analogWrite(pin_ph, 0);
+        #else
+        analogWrite(pin_en, 0);
+        #endif
         return false;
     }
     if (goAndStop) {
 
         
         if (isStalling && millis()-_stall_t0 > stall_cutoff_ms){
+            #ifdef USE_ININ
             analogWrite(pin_en, 0);
+            analogWrite(pin_ph, 0);
+            #else
+            analogWrite(pin_en, 0);
+            #endif
             return false;
 
         } 
         else if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 2){
+            #ifdef USE_ININ
             analogWrite(pin_en, 0);
+            analogWrite(pin_ph, 0);
+            #else
+            analogWrite(pin_en, 0);
+            #endif
             motor_move=false;
             goAndStop_speed=0;
             _angle=goAndStop_targetAngle;
@@ -86,15 +101,25 @@ bool MotorDriver::update(volatile int encoder_position) {
         } else if (goAndStop_targetAngle*gearfactor > encoder_position){
             goAndStop_speed+=goAndStop_acceleration;
             if (goAndStop_speed>torque) goAndStop_speed=torque;
+            #ifdef USE_ININ
+            analogWrite(pin_en, goAndStop_speed);
+            analogWrite(pin_ph, 0);
+            #else
             analogWrite(pin_en, goAndStop_speed);
             digitalWrite(pin_ph, HIGH);
+            #endif
             motor_move=true;
 
         } else if (goAndStop_targetAngle*gearfactor < encoder_position){
             goAndStop_speed+=goAndStop_acceleration;
             if (goAndStop_speed>torque) goAndStop_speed=torque;
+            #ifdef USE_ININ
+            analogWrite(pin_en, 0);
+            analogWrite(pin_ph, goAndStop_speed);
+            #else
             analogWrite(pin_en, goAndStop_speed);
             digitalWrite(pin_ph, LOW);
+            #endif
             motor_move=true;
 
         }
@@ -174,9 +199,19 @@ bool MotorDriver::update(volatile int encoder_position) {
     }
     output_voltage=round(output_voltage*(0.2*(millis()-_stall_t0)/stall_cutoff_ms +0.8));
     // output direction and voltage to motor
+    #ifdef USE_ININ
+    if (output_voltage > 0) {
+    analogWrite(pin_en, abs(output_voltage));
+    analogWrite(pin_ph, 0);
+    }else {
+    analogWrite(pin_ph, abs(output_voltage));
+    analogWrite(pin_en, 0);
+    }
+
+    #else
     digitalWrite(pin_ph, (output_voltage > 0));
     analogWrite(pin_en, abs(output_voltage));
-
+    #endif
     // return true if motor has moved since last update
     if (encoder_position == encoder_position_prev) motor_move=false;
     else

@@ -67,8 +67,8 @@ void MotorDriver::sync(double input_angle) {
 bool MotorDriver::update(volatile int encoder_position) {
     if (millis() < _stop_t0 || _pause) {
         #ifdef USE_ININ
-        analogWrite(pin_en, 0);
-        analogWrite(pin_ph, 0);
+        analogWrite(pin_en, 255);
+        analogWrite(pin_ph, 255);
         #else
         analogWrite(pin_en, 0);
         #endif
@@ -79,18 +79,18 @@ bool MotorDriver::update(volatile int encoder_position) {
         
         if (isStalling && millis()-_stall_t0 > stall_cutoff_ms){
             #ifdef USE_ININ
-            analogWrite(pin_en, 0);
-            analogWrite(pin_ph, 0);
+            analogWrite(pin_en, 255);
+            analogWrite(pin_ph, 255);
             #else
             analogWrite(pin_en, 0);
             #endif
             return false;
 
         } 
-        else if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 2){
+        else if ( abs(goAndStop_targetAngle*gearfactor-encoder_position) < 4){
             #ifdef USE_ININ
-            analogWrite(pin_en, 0);
-            analogWrite(pin_ph, 0);
+            analogWrite(pin_en, 255);
+            analogWrite(pin_ph, 255);
             #else
             analogWrite(pin_en, 0);
             #endif
@@ -203,9 +203,13 @@ bool MotorDriver::update(volatile int encoder_position) {
     if (output_voltage > 0) {
     analogWrite(pin_en, abs(output_voltage));
     analogWrite(pin_ph, 0);
-    }else {
+    }else if (output_voltage < 0) {
     analogWrite(pin_ph, abs(output_voltage));
     analogWrite(pin_en, 0);
+    }
+    else {
+    analogWrite(pin_ph, 255);
+    analogWrite(pin_en, 255);
     }
 
     #else
